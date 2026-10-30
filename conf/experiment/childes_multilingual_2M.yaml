@@ -1,0 +1,31 @@
+# @package _global_
+# Best model for 1.8M words
+defaults:
+  - base_experiment
+  - override /model: "gpt2_5M"
+
+dataset:
+  subconfig: ??? # Must provide subconfig
+  valid_size: 1000
+
+tokenizer:
+  name: ??? # Must provide tokenizer name
+
+experiment:
+  group: childes-multilingual-5M
+  evaluate_babyslm: False
+  evaluate_segmentation: True
+
+data_preprocessing:
+  subsample: 1800000
+  subsample_type: 'tokens'
+  max_input_length: 128
+  join_utts: "static"
+  remove_word_boundaries: True
+
+model:
+  model_kwargs: {
+    "resid_pdrop" : 0.3,
+    "embd_pdrop" : 0.3,
+    "attn_pdrop" : 0.3,
+  }

@@ -1,0 +1,33 @@
+# @package _global_
+# Best model for 1.8M words
+defaults:
+  - base_experiment
+  - override /model: "gpt2_5M"
+  - override /dataset: "childes_english_phoneme_random"
+
+dataset:
+  subconfig: ??? # Must provide subconfig
+  valid_size: 1000
+
+tokenizer:
+  name: 'phonemetransformers/CHILDES-English-phoneme-tokenizer'
+
+experiment:
+  group: childes-segmentation-random
+  evaluate_babyslm: False
+  evaluate_segmentation: True
+  segmentation_subsample: 25000
+
+data_preprocessing:
+  subsample: 1800000
+  subsample_type: 'tokens'
+  max_input_length: 128
+  join_utts: "static"
+  remove_word_boundaries: True
+
+model:
+  model_kwargs: {
+    "resid_pdrop" : 0.3,
+    "embd_pdrop" : 0.3,
+    "attn_pdrop" : 0.3,
+  }
