@@ -212,7 +212,7 @@ class DataPreprocessor(object):
                 # Every position after an utterance boundary is a word start
                 word_starts = np.logical_or(word_starts, np.array([0] + input_ids[:-1]) == self.tokenizer.eos_token_id)
                 word_starts = np.logical_and(
-                    word_starts, np.array(input_ids) != self.eos_token_id
+                    word_starts, np.array(input_ids) != self.tokenizer.eos_token_id
                 )  # Utterance boundaries are not word boundaries
                 word_starts[0] = 1  # First token is always a word start
                 word_starts_list.append(word_starts)

@@ -1,0 +1,71 @@
+# Smoke test for the phoneme transformer on Nautilus: dry run (100 steps) on
+# BabyLM strict-small. Checks the code, tokenizer and dataset load end to end.
+# Runs offline: hub_model_id is hardcoded to the phonemetransformers org, so a
+# non-offline run would try to push there.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ksankaran-phoneme-smoke-1
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values:
+                - NVIDIA-A10
+                - NVIDIA-GeForce-RTX-3090
+      containers:
+      - name: smoke
+        image: pytorch/pytorch:2.0.1-cuda11.7-cudnn8-runtime
+        envFrom:
+        - secretRef:
+            name: ksankaran-wandb
+        - secretRef:
+            name: ksankaran-hf
+        env:
+        - name: HF_READ_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: ksankaran-hf
+              key: HF_TOKEN
+        - name: HF_WRITE_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: ksankaran-hf
+              key: HF_TOKEN
+        command: [bash, -c]
+        args:
+        - |
+          set -e
+          nvidia-smi -L
+          apt-get update -qq && apt-get install -y -qq git > /dev/null
+          git clone --depth 1 --recurse-submodules --shallow-submodules --branch feature/evaluation-pipeline-submodule https://github.com/karsan377/babylm-phoneme-transformer.git /work/repo
+          cd /work/repo
+          grep -v -E "^(jupyter|black|pre-commit)" requirements.txt > /work/requirements-job.txt
+          pip install -q -r /work/requirements-job.txt
+          # src/evaluation/blimp.py imports lm_eval at module load, so the submodule's package must be installed.
+          pip install -q ./submodules/evaluation-pipeline-2024
+          # Smoke run: dry_run caps training at 100 steps, offline_run disables wandb and hub pushes.
+          # subconfig override is needed because babylm_comparison_phoneme sets subconfig 'strict'.
+          timeout 1800 python train.py \
+            experiment=babylm_comparison_phoneme \
+            dataset=babylm_strict_small_phoneme \
+            dataset.subconfig=strict_small \
+            model=gpt2_85M \
+            tokenizer=babylm_phoneme \
+            experiment.name=phoneme-smoke \
+            experiment.group=debug \
+            experiment.dry_run=True \
+            experiment.offline_run=True \
+            experiment.evaluate_babyslm=False \
+            experiment.blimp_tasks=null
+        resources:
+          requests: {cpu: "2", memory: 16Gi, nvidia.com/gpu: "1"}
+          limits:   {cpu: "2", memory: 16Gi, nvidia.com/gpu: "1"}
