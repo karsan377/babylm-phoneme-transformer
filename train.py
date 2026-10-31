@@ -290,7 +290,7 @@ def main(cfg: TransformerSegmentationConfig):
         trainer.evaluate(metric_key_prefix="eval_best")
 
         # Push final model with tag
-        if not cfg.experiment.offline_run:
+        if cfg.experiment.push_to_hub:
             trainer.push_to_hub(
                 commit_message=f"Final model for experiment {cfg.experiment.name}",
                 tags=cfg.experiment.name,  # Can be a string or list of strings
