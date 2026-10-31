@@ -50,6 +50,8 @@ spec:
           cd /work/repo
           grep -v -E "^(jupyter|black|pre-commit)" requirements.txt > /work/requirements-job.txt
           pip install -q -r /work/requirements-job.txt
+          # requirements.txt pins transformers 4.27.4, which has no LlamaConfig (src/models/llama.py imports it).
+          pip install -q "transformers==4.34.1"
           # src/evaluation/blimp.py imports lm_eval at module load, so the submodule's package must be installed.
           pip install -q ./submodules/evaluation-pipeline-2024
           # Smoke run: dry_run caps training at 100 steps, offline_run disables wandb and hub pushes.
