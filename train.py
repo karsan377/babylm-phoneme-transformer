@@ -242,9 +242,9 @@ def main(cfg: TransformerSegmentationConfig):
         report_to="wandb" if not cfg.experiment.offline_run else None,  # wandb deactivated for dry runs
         save_strategy="steps",
         hub_strategy="every_save",
-        push_to_hub=not cfg.experiment.offline_run,
-        hub_model_id=f"phonemetransformers/{cfg.experiment.group}-{cfg.model.name}-model" if not cfg.experiment.offline_run else None,
-        hub_token=os.environ["HF_WRITE_TOKEN"] if not cfg.experiment.offline_run else None,
+        push_to_hub=cfg.experiment.push_to_hub,
+        hub_model_id=f"phonemetransformers/{cfg.experiment.group}-{cfg.model.name}-model" if cfg.experiment.push_to_hub else None,
+        hub_token=os.environ["HF_WRITE_TOKEN"] if cfg.experiment.push_to_hub else None,
         remove_unused_columns=True,
         label_names=["input_ids"],
         load_best_model_at_end=True,
