@@ -1,0 +1,6 @@
+name: 'phonemetransformers/IPA-BabyLM'
+subconfig: 'strict_small'
+text_column: 'phonemized_utterance'
+is_phonemes: True
+max_age: null # The public CSVs have no target_child_age column
+remove_child_utterances: False # ... or is_child column
