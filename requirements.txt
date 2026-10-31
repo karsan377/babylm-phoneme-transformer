@@ -11,5 +11,5 @@ PyYAML==6.0
 scipy==1.9.3
 seaborn==0.12.2
 scikit-learn==1.2.2
-transformers==4.27.4
+transformers==4.34.1
 wandb==0.14.0
