@@ -51,10 +51,11 @@ spec:
           cd /work/repo
           grep -v -E "^(jupyter|black|pre-commit)" requirements.txt > /work/requirements-job.txt
           pip install -q -r /work/requirements-job.txt
-          # requirements.txt pins transformers 4.27.4, which has no LlamaConfig (src/models/llama.py imports it).
-          pip install -q "transformers==4.34.1"
           # src/evaluation/blimp.py imports lm_eval at module load, so the submodule's package must be installed.
           pip install -q ./submodules/evaluation-pipeline-2024
+          # lm_eval's dependencies need newer datasets and huggingface-hub than requirements.txt pins, and
+          # train.py passes eval_strategy, which needs transformers >= 4.41. Pin a set that resolves together.
+          pip install -q "datasets==2.18.0" "huggingface-hub==0.23.5" "transformers==4.44.2" "peft==0.11.1" "accelerate==0.33.0"
           python train.py \
             experiment=babylm_comparison_phoneme \
             dataset=babylm_strict_small_phoneme \
