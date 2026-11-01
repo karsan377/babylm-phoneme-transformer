@@ -1,0 +1,13 @@
+# Persistent storage for checkpoints of the phoneme training run. The claim outlives the job,
+# so checkpoints survive if the job fails. Mounted at /work/ckpt by phoneme-train-job.yaml.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ksankaran-phoneme-ckpt
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: rook-ceph-block
+  resources:
+    requests:
+      storage: 30Gi
