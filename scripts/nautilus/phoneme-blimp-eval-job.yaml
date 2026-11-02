@@ -1,0 +1,101 @@
+# BLiMP evaluation of the saved phoneme-strict-small checkpoints (150k = best val loss, 200k = final).
+# Uses the phonemized BLiMP and supplement data from phonemetransformers/IPA-BabyLM-evaluation, and
+# writes blimp_results.json into each checkpoint folder on the ksankaran-phoneme-ckpt claim.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ksankaran-phoneme-blimp-1
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values:
+                - NVIDIA-A10
+                - NVIDIA-GeForce-RTX-3090
+                - NVIDIA-GeForce-RTX-4090
+                - NVIDIA-L40
+                - NVIDIA-L40S
+                - NVIDIA-L4
+                - NVIDIA-RTX-A5000
+                - NVIDIA-RTX-A4000
+                - NVIDIA-RTX-5000-Ada-Generation
+                - NVIDIA-GeForce-RTX-2080-Ti
+                - NVIDIA-GeForce-GTX-1080-Ti
+                - NVIDIA-TITAN-RTX
+                - NVIDIA-TITAN-Xp
+                - Tesla-T4
+                - Tesla-V100-SXM2-16GB
+                - Tesla-V100-SXM2-32GB
+                - Tesla-V100-PCIE-16GB
+                - Quadro-RTX-6000
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values:
+                - ry-gpu-08.sdsc.optiputer.net
+      containers:
+      - name: blimp
+        image: pytorch/pytorch:2.0.1-cuda11.7-cudnn8-runtime
+        envFrom:
+        - secretRef:
+            name: ksankaran-hf
+        env:
+        - name: HF_READ_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: ksankaran-hf
+              key: HF_TOKEN
+        command: [bash, -c]
+        args:
+        - |
+          set -e
+          nvidia-smi -L
+          apt-get update -qq && apt-get install -y -qq git > /dev/null
+          git clone --recurse-submodules --branch feature/evaluation-pipeline-submodule https://github.com/karsan377/babylm-phoneme-transformer.git /work/repo
+          cd /work/repo
+          git checkout 302a9d3
+          git submodule update --init --recursive
+          grep -v -E "^(jupyter|black|pre-commit)" requirements.txt > /work/requirements-job.txt
+          pip install -q -r /work/requirements-job.txt
+          pip install -q ./submodules/evaluation-pipeline-2024
+          pip install -q "datasets==2.18.0" "huggingface-hub==0.23.5" "transformers==4.44.2" "peft==0.11.1" "accelerate==0.33.0" "wandb==0.18.7"
+          # Phonemized BLiMP and supplement data, laid out as blimp_evaluation expects.
+          python -c "
+          from huggingface_hub import snapshot_download
+          snapshot_download(repo_id='phonemetransformers/IPA-BabyLM-evaluation', repo_type='dataset',
+                            local_dir='evaluation_data/babylm_eval_phonemized',
+                            allow_patterns=['blimp_filtered/*', 'supplement_filtered/*'])
+          "
+          export PYTHONPATH=/work/repo
+          python - <<'EOF'
+          from pathlib import Path
+          import torch
+          from transformers import AutoModelForCausalLM, AutoTokenizer
+          from src.evaluation.blimp import blimp_evaluation
+
+          for ckpt in ["checkpoint-150000", "checkpoint-200000"]:
+              path = Path("/work/ckpt/phoneme-strict-small/phoneme-strict-small-gpt2-85M") / ckpt
+              tokenizer = AutoTokenizer.from_pretrained(path)
+              model = AutoModelForCausalLM.from_pretrained(path).to("cuda")
+              results = blimp_evaluation(model, tokenizer, path, batch_size=32, tasks="blimp_filtered,blimp_supplement", device="cuda", is_phonemized=True)
+              print(ckpt, "overall:", {k: v for k, v in results["results"].items() if k in ("blimp_filtered", "blimp_supplement")}, flush=True)
+              del model
+              torch.cuda.empty_cache()
+          EOF
+        resources:
+          requests: {cpu: "2", memory: 16Gi, nvidia.com/gpu: "1"}
+          limits:   {cpu: "2", memory: 16Gi, nvidia.com/gpu: "1"}
+        volumeMounts:
+        - name: ckpt
+          mountPath: /work/ckpt
+      volumes:
+      - name: ckpt
+        persistentVolumeClaim:
+          claimName: ksankaran-phoneme-ckpt

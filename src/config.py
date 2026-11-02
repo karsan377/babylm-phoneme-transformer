@@ -23,6 +23,9 @@ class ExperimentParams:
     # whether to run the experiment only offline
     offline_run: bool = False
 
+    # whether to push the trained model to the huggingface hub
+    push_to_hub: bool = False
+
     # Whether to evaluate the segmentation task
     evaluate_segmentation: bool = True
 

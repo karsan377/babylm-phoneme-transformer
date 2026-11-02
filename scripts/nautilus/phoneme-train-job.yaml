@@ -1,0 +1,107 @@
+# Full training run of the phoneme transformer on BabyLM strict-small with config defaults
+# (200k steps). Logs to W&B under group phoneme-strict-small (the W&B project). No Hub push
+# (push_to_hub defaults to False), and BLiMP/BabySLM evaluation is off until later.
+# Pinned to commit 302a9d3 (the tested dependency set). Checkpoints go to the ksankaran-phoneme-ckpt
+# claim (see phoneme-checkpoints-pvc.yaml), so they survive if the job fails.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ksankaran-phoneme-train-1
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu.product
+                operator: In
+                values:
+                - NVIDIA-A10
+                - NVIDIA-GeForce-RTX-3090
+                - NVIDIA-GeForce-RTX-4090
+                - NVIDIA-L40
+                - NVIDIA-L40S
+                - NVIDIA-L4
+                - NVIDIA-RTX-A5000
+                - NVIDIA-RTX-A4000
+                - NVIDIA-RTX-5000-Ada-Generation
+                - NVIDIA-GeForce-RTX-2080-Ti
+                - NVIDIA-GeForce-GTX-1080-Ti
+                - NVIDIA-TITAN-RTX
+                - NVIDIA-TITAN-Xp
+                - Tesla-T4
+                - Tesla-V100-SXM2-16GB
+                - Tesla-V100-SXM2-32GB
+                - Tesla-V100-PCIE-16GB
+                - Quadro-RTX-6000
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values:
+                - ry-gpu-08.sdsc.optiputer.net
+      containers:
+      - name: train
+        image: pytorch/pytorch:2.0.1-cuda11.7-cudnn8-runtime
+        envFrom:
+        - secretRef:
+            name: ksankaran-wandb
+        - secretRef:
+            name: ksankaran-hf
+        env:
+        - name: HF_READ_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: ksankaran-hf
+              key: HF_TOKEN
+        - name: HF_WRITE_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: ksankaran-hf
+              key: HF_TOKEN
+        - name: WANDB_ENTITY
+          value: ksankaran-uc-san-diego
+        command: [bash, -c]
+        args:
+        - |
+          set -e
+          nvidia-smi -L
+          apt-get update -qq && apt-get install -y -qq git > /dev/null
+          git clone --recurse-submodules --branch feature/evaluation-pipeline-submodule https://github.com/karsan377/babylm-phoneme-transformer.git /work/repo
+          cd /work/repo
+          git checkout 302a9d3
+          git submodule update --init --recursive
+          # Checkpoints go to the persistent claim. train.py writes to ./checkpoints, so link it there.
+          ln -s /work/ckpt /work/repo/checkpoints
+          grep -v -E "^(jupyter|black|pre-commit)" requirements.txt > /work/requirements-job.txt
+          pip install -q -r /work/requirements-job.txt
+          # src/evaluation/blimp.py imports lm_eval at module load, so the submodule's package must be installed.
+          pip install -q ./submodules/evaluation-pipeline-2024
+          # lm_eval's dependencies need newer datasets and huggingface-hub than requirements.txt pins, and
+          # train.py passes eval_strategy, which needs transformers >= 4.41. Pin a set that resolves together.
+          # wandb 0.14.0 (requirements.txt) fails wandb.init against the current W&B server, so upgrade it.
+          pip install -q "datasets==2.18.0" "huggingface-hub==0.23.5" "transformers==4.44.2" "peft==0.11.1" "accelerate==0.33.0" "wandb==0.18.7"
+          python train.py \
+            experiment=babylm_comparison_phoneme \
+            dataset=babylm_strict_small_phoneme \
+            dataset.subconfig=strict_small \
+            model=gpt2_85M \
+            tokenizer=babylm_phoneme \
+            experiment.name=phoneme-strict-small-gpt2-85M \
+            experiment.group=phoneme-strict-small \
+            experiment.offline_run=False \
+            experiment.push_to_hub=False \
+            experiment.evaluate_babyslm=False \
+            experiment.blimp_tasks=null
+        resources:
+          requests: {cpu: "2", memory: 16Gi, nvidia.com/gpu: "1"}
+          limits:   {cpu: "2", memory: 16Gi, nvidia.com/gpu: "1"}
+        volumeMounts:
+        - name: ckpt
+          mountPath: /work/ckpt
+      volumes:
+      - name: ckpt
+        persistentVolumeClaim:
+          claimName: ksankaran-phoneme-ckpt

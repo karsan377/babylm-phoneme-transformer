@@ -171,7 +171,8 @@ def main(cfg: TransformerSegmentationConfig):
         logger.info(f"Running in dry run mode -- subsampling dataset by {DRY_RUN_SUBSAMPLE_FACTOR}x")
         dataset["train"] = dataset["train"].select(range(0, dataset["train"].num_rows, DRY_RUN_SUBSAMPLE_FACTOR))
         dataset["valid"] = dataset["valid"].select(range(0, dataset["valid"].num_rows, DRY_RUN_SUBSAMPLE_FACTOR))
-        cfg.experiment.segmentation_subsample = cfg.experiment.segmentation_subsample // DRY_RUN_SUBSAMPLE_FACTOR
+        if cfg.experiment.segmentation_subsample is not None:
+            cfg.experiment.segmentation_subsample = cfg.experiment.segmentation_subsample // DRY_RUN_SUBSAMPLE_FACTOR
 
     logger.info("Loading tokenizer")
     tokenizer = setup.load_tokenizer(cfg.tokenizer)
@@ -242,9 +243,9 @@ def main(cfg: TransformerSegmentationConfig):
         report_to="wandb" if not cfg.experiment.offline_run else None,  # wandb deactivated for dry runs
         save_strategy="steps",
         hub_strategy="every_save",
-        push_to_hub=not cfg.experiment.offline_run,
-        hub_model_id=f"phonemetransformers/{cfg.experiment.group}-{cfg.model.name}-model" if not cfg.experiment.offline_run else None,
-        hub_token=os.environ["HF_WRITE_TOKEN"] if not cfg.experiment.offline_run else None,
+        push_to_hub=cfg.experiment.push_to_hub,
+        hub_model_id=f"phonemetransformers/{cfg.experiment.group}-{cfg.model.name}-model" if cfg.experiment.push_to_hub else None,
+        hub_token=os.environ["HF_WRITE_TOKEN"] if cfg.experiment.push_to_hub else None,
         remove_unused_columns=True,
         label_names=["input_ids"],
         load_best_model_at_end=True,
@@ -290,7 +291,7 @@ def main(cfg: TransformerSegmentationConfig):
         trainer.evaluate(metric_key_prefix="eval_best")
 
         # Push final model with tag
-        if not cfg.experiment.offline_run:
+        if cfg.experiment.push_to_hub:
             trainer.push_to_hub(
                 commit_message=f"Final model for experiment {cfg.experiment.name}",
                 tags=cfg.experiment.name,  # Can be a string or list of strings
