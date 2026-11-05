@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: babylm-hf-sweep
+  namespace: YOUR_NAMESPACE
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: sweep
+          image: YOUR_REGISTRY/babylm-hf-trainer:latest
+          command: ["python", "scripts/run_sweep.py", "--data-dir", "data/processed", "--output-dir", "outputs/sweep"]
+          resources:
+            requests: {cpu: "4", memory: 16Gi, nvidia.com/gpu: "1"}
+            limits: {cpu: "4", memory: 16Gi, nvidia.com/gpu: "1"}
+          volumeMounts:
+            - {name: workspace, mountPath: /app/data}
+            - {name: outputs, mountPath: /app/outputs}
+      volumes:
+        - name: workspace
+          persistentVolumeClaim: {claimName: YOUR_DATA_PVC}
+        - name: outputs
+          persistentVolumeClaim: {claimName: YOUR_OUTPUT_PVC}

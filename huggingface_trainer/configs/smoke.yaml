@@ -1,0 +1,11 @@
+data_dir: data/smoke-processed
+output_dir: outputs/smoke
+epochs: 1
+max_steps: 5
+learning_rate: 0.0001
+batch_size: 2
+gradient_accumulation: 1
+block_size: 64
+eval_steps: 5
+save_steps: 5
+logging_steps: 1

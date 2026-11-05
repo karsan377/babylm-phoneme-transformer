@@ -1,0 +1,15 @@
+evaluation_type,task,primary_metric,primary_value
+zero_shot,BLiMP,accuracy,0.5823
+zero_shot,BLiMP Supplement,accuracy,0.5468
+zero_shot,EWoK,accuracy,0.5119
+zero_shot,Entity Tracking,accuracy,0.1747
+zero_shot,COMPS,accuracy,0.5019
+zero_shot,GlobalPIQA parallel,accuracy,0.2816
+zero_shot,GlobalPIQA nonparallel,accuracy,0.4700
+finetune,BoolQ,accuracy,0.6929663609
+finetune,MNLI,accuracy,0.4698451508
+finetune,MRPC,f1,0.8249258160
+finetune,MultiRC,accuracy,0.6138613861
+finetune,QQP,f1,0.6220057383
+finetune,RTE,accuracy,0.5467625899
+finetune,WSC,accuracy,0.6153846154

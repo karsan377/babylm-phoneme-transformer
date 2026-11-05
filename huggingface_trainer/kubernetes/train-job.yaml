@@ -1,0 +1,25 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: babylm-hf-train
+  namespace: YOUR_NAMESPACE
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: trainer
+          image: YOUR_REGISTRY/babylm-hf-trainer:latest
+          command: ["python", "scripts/run_from_config.py", "configs/train_model_b.yaml"]
+          resources:
+            requests: {cpu: "4", memory: 16Gi, nvidia.com/gpu: "1"}
+            limits: {cpu: "4", memory: 16Gi, nvidia.com/gpu: "1"}
+          volumeMounts:
+            - {name: workspace, mountPath: /app/data}
+            - {name: outputs, mountPath: /app/outputs}
+      volumes:
+        - name: workspace
+          persistentVolumeClaim: {claimName: YOUR_DATA_PVC}
+        - name: outputs
+          persistentVolumeClaim: {claimName: YOUR_OUTPUT_PVC}

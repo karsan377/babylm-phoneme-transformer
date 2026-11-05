@@ -1,0 +1,11 @@
+rank,run,learning_rate,scheduler,weight_decay,warmup_ratio,validation_loss,perplexity
+1,run01-lr1e-4-cos-wd01-wu05,0.0001,cosine,0.01,0.05,3.445998,31.374571
+2,run02-lr2e-4-cos-wd01-wu05,0.0002,cosine,0.01,0.05,3.464258,31.952748
+3,run10-lr3e-4-cos-wd01-wu10,0.0003,cosine,0.01,0.10,3.471376,32.181007
+4,run08-lr3e-4-cos-wd05-wu05,0.0003,cosine,0.05,0.05,3.485719,32.645898
+5,run07-lr3e-4-cos-wd00-wu05,0.0003,cosine,0.00,0.05,3.488016,32.720961
+6,run03-lr3e-4-cos-wd01-wu05,0.0003,cosine,0.01,0.05,3.493240,32.892342
+7,run09-lr3e-4-cos-wd01-wu02,0.0003,cosine,0.01,0.02,3.505942,33.312797
+8,run04-lr4e-4-cos-wd01-wu05,0.0004,cosine,0.01,0.05,3.511110,33.485410
+9,run05-lr5e-4-cos-wd01-wu05,0.0005,cosine,0.01,0.05,3.530347,34.135806
+10,run06-lr3e-4-lin-wd01-wu05,0.0003,linear,0.01,0.05,3.551344,34.860127

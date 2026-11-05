@@ -1,0 +1,7 @@
+data_dir: data/processed
+output_dir: outputs/sweep
+epochs_per_trial: 10
+seed: 42
+selection_metric: eval_loss
+resume_from_checkpoint: auto
+trials: scripts/run_sweep.py

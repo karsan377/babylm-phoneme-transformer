@@ -1,0 +1,10 @@
+torch==2.6.0
+transformers==4.45.2
+accelerate==0.34.2
+numpy==1.26.4
+safetensors==0.8.0
+tokenizers==0.20.1
+pandas==2.2.3
+huggingface-hub==0.25.2
+pytest==8.3.5
+PyYAML==6.0.2

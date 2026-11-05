@@ -2,6 +2,15 @@
 
 This repository contains training scripts, configs and analysis notebooks related to training and evaluating transformers trained on phonemes. This project is still in development.
 
+## Hugging Face Trainer text-model checkpoint
+
+The reproducible BabyLM Strict text-model pipeline developed for the quarter 1
+checkpoint is under [`huggingface_trainer/`](huggingface_trainer/README.md).
+It trains a Llama-style causal model from random initialization using Hugging
+Face Trainer, runs a restart-safe ten-configuration sweep, selects the best
+validation model, and executes the official BabyLM evaluation. It includes a
+fast local smoke test and optional credential-free Kubernetes templates.
+
 ## Installation
 
 If you plan to use Weights and Biases for logging (i.e. not running in offline mode) you will also need to specify your wandb project to `.env` with the name `WANDB_ENTITY`. In order to interact with the hub, you need to generate read and write [access tokens](https://huggingface.co/docs/hub/security-tokens) from your hugging face account. Once generated, store these values as environment variables in `.env` with the names `HF_READ_TOKEN`, and `HF_WRITE_TOKEN`:
