@@ -202,3 +202,9 @@ README.md
 - The pretrained weights correspond to the selected best hyperparameter sweep run.
 - The model can be loaded and evaluated without retraining.
 - The fast evaluation requires the official BabyLM evaluation pipeline and its associated evaluation datasets.
+
+## AI and Human Contributions
+
+ChatGPT was used to assist with understanding unfamiliar tools, debugging code, configuring training experiments, and organizing repository documentation. I was responsible for implementing and running the GPT-2 training pipeline, conducting hyperparameter sweeps, evaluating the trained model, and reviewing AI-assisted suggestions.
+
+For a detailed summary of important prompts, AI contributions, and testing procedures, see AI_USE.md.
