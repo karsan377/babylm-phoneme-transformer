@@ -148,7 +148,7 @@ Then download the datasets:
 python -m scripts.download_evals
 ```
 
-The fast EWoK dataset is password-protected. Extract `evaluation_data/fast_eval/ewok_fast.zip` using the password `BabyLM2025`.
+The fast EWoK evaluation dataset is password-protected. To access the dataset, refer to the official BabyLM evaluation repository and follow the instructions provided there for downloading and extracting the EWoK dataset.
 
 Refer to the official BabyLM README for any additional dataset setup requirements.
 
