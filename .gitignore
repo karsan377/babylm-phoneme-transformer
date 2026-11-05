@@ -1,0 +1,9 @@
+.env
+.venv*/
+__pycache__/
+runs/
+runs_hf/
+babylm_packed/
+models/
+wandb/
+*.log
