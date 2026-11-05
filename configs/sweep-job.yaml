@@ -1,0 +1,53 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: esther-babylm-sweep
+  namespace: dsc-capstone-26-27
+spec:
+  completions: 10
+  parallelism: 3
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: training
+          image: pytorch/pytorch:2.5.1-cuda12.4-cudnn9-runtime
+          workingDir: /shared
+          command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+              pip install "transformers==4.57.6" "datasets==3.6.0" "wandb==0.22.3" "accelerate==1.12.0"
+              wandb agent --count 1 echung-uc-san-diego/babylm-hf-hyperparameter-sweep/eufeezt0
+          env:
+            - name: WANDB_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: esther-babylm-wandb
+                  key: WANDB_API_KEY
+            - name: WANDB_DIR
+              value: /tmp/wandb
+            - name: WANDB_CACHE_DIR
+              value: /tmp/wandb-cache
+            - name: HF_HOME
+              value: /tmp/huggingface
+            - name: PYTHONUNBUFFERED
+              value: "1"
+          resources:
+            requests:
+              cpu: "4"
+              memory: 16Gi
+              nvidia.com/gpu: "1"
+            limits:
+              cpu: "4"
+              memory: 16Gi
+              nvidia.com/gpu: "1"
+          volumeMounts:
+            - name: shared-storage
+              mountPath: /shared
+      volumes:
+        - name: shared-storage
+          persistentVolumeClaim:
+            claimName: esther-babylm-shared

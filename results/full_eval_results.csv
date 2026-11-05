@@ -1,0 +1,8 @@
+Benchmark,Score,Metric
+BLiMP,63.75,Accuracy (%)
+BLiMP Supplement,53.79,Accuracy (%)
+EWoK,49.07,Accuracy (%)
+Entity Tracking,18.08,Accuracy (%)
+COMPS,50.44,Accuracy (%)
+Eye Tracking,0.65,Reading score
+Self-Paced Reading,0.06,Reading score

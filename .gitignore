@@ -142,3 +142,13 @@ wandb
 
 # Downloaded evaluation data
 evaluation_data/
+
+# Generated training datasets
+/data/*.jsonl
+
+# Generated model checkpoints
+/trained_models/
+/checkpoints/
+
+# Weights & Biases local logs
+/wandb/
