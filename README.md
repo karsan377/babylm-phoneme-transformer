@@ -1,54 +1,228 @@
-# Phoneme Transformers
+# BabyLM Hugging Face Trainer pipeline
 
-This repository contains training scripts, configs and analysis notebooks related to training and evaluating transformers trained on phonemes. This project is still in development.
+This directory reproduces Samson Wanfranek's BabyLM Strict text-model
+experiment without requiring access to the original Kubernetes account. It
+contains data preparation, tokenizer training, a randomly initialized
+Llama-style causal model, Hugging Face Trainer training, checkpoint resume,
+word-milestone exports, a ten-configuration sweep, model selection, and the
+official BabyLM evaluation entry point.
 
-## Hugging Face Trainer text-model checkpoint
+The model is **not GPT-2 and not a pretrained Llama checkpoint**. It is a
+35,662,336-parameter Llama-style decoder initialized from random weights and
+trained with `transformers.Trainer`.
 
-The reproducible BabyLM Strict text-model pipeline developed for the quarter 1
-checkpoint is under [`huggingface_trainer/`](huggingface_trainer/README.md).
-It trains a Llama-style causal model from random initialization using Hugging
-Face Trainer, runs a restart-safe ten-configuration sweep, selects the best
-validation model, and executes the official BabyLM evaluation. It includes a
-fast local smoke test and optional credential-free Kubernetes templates.
+## Model and experiment
 
-## Installation
+| Property | Value |
+|---|---:|
+| Hidden size | 512 |
+| Transformer layers | 10 |
+| Attention heads | 8 |
+| Key/value heads | 4 |
+| MLP size | 1,536 |
+| Context | 512 tokens |
+| Tokenizer | custom 8,192-token byte-level BPE |
+| Effective batch size | 32 |
+| Training epochs per sweep run | 10 |
+| Maximum Strict exposure | 100 million words |
+| Selection criterion | held-out validation loss |
 
-If you plan to use Weights and Biases for logging (i.e. not running in offline mode) you will also need to specify your wandb project to `.env` with the name `WANDB_ENTITY`. In order to interact with the hub, you need to generate read and write [access tokens](https://huggingface.co/docs/hub/security-tokens) from your hugging face account. Once generated, store these values as environment variables in `.env` with the names `HF_READ_TOKEN`, and `HF_WRITE_TOKEN`:
+The winning run used learning rate `1e-4`, cosine scheduling, weight decay
+`0.01`, and warmup ratio `0.05`. Its validation perplexity was `31.3746`.
 
+## 1. Installation
+
+Python 3.11 and a CUDA-capable GPU are recommended. CPU execution works for
+the smoke test but full training and evaluation are expensive.
+
+```bash
+cd huggingface_trainer
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+pip install -r requirements-lock.txt
+python scripts/validate_setup.py --skip-data-check
 ```
-export WANDB_ENTITY=""
-export HF_READ_TOKEN=""
-export HF_WRITE_TOKEN=""
+
+`requirements.txt` contains the intended direct dependency ranges;
+`requirements-lock.txt` records the versions used for reproducibility.
+
+## 2. Obtain the data
+
+Download the official BabyLM 2026 Strict text corpus following the challenge
+instructions. Do not commit the corpus to Git. Place the training and
+validation text files anywhere locally, then run:
+
+```bash
+python scripts/prepare_data.py \
+  --train data/raw/train/*.train \
+  --validation data/raw/dev/*.dev \
+  --output-dir data/processed \
+  --vocab-size 8192
 ```
 
-Then, to set up the project, run `./setup.sh`. This sets up the requirements and git hooks for automatic code formatting. Additionally, this script makes sure you are logged into WandB and Huggingface.
+The preparation script trains the tokenizer using training data only and
+creates:
 
-## Training
-
-The main entry point for training is `train.py`, which uses a modified Huggingface Trainer to train a model. We use Hydra to specify configurations, including model parameters, with an architecture and dataset specified by the chosen configuration. E.g:
-
-```
-python train.py experiment=base_experiment experiment.name=my-experiment experiment.group=debug
-```
-
-### Evaluation
-
-The project supports the [BabyLM evaluation pipeline](https://github.com/babylm/evaluation-pipeline-2024) by specifying the tasks to run during training. This requires downloading and placing the evaluation data in the main directory under `./evaluation_data/babylm_eval`. The project also supports the [BabySLM](https://github.com/babylm/evaluation-pipeline-2024) evaluation pipeline and custom word segmentation experiments. 
-
-### Hyperparameter Tuning
-
-Hyperparameter tuning can be conducted using a Weights & Biases sweep. To create a sweep, run the following:
-
-```
-wandb sweep --project PROJECT_NAME scripts/sweep.yaml
+```text
+data/processed/
+├── manifest.json
+├── tokenizer/
+├── train_ids.npy
+├── train_word_ends.npy
+├── validation_ids.npy
+└── validation_word_ends.npy
 ```
 
-This will create a new sweep in Weights & Biases with an ID and a URL. You can either run the agent by either:
-1. Running an agent directly using wandb: `wandb agent USER_ID/PROJECT_NAME/SWEEP_ID`
-2. Run the script provided: `sh scripts/run_sweep_agent USER_ID/PROJECT_NAME/SWEEP_ID`
-3. Queue a SLURM job to run the agent on a different node: `sbatch scripts/slurm_submit_sweep_agent.wilkes3 USER_ID/PROJECT_NAME/SWEEP_ID`.
+The manifest records source hashes, token counts, and word counts. Validate it
+before expensive training:
 
-The first option starts a `wandb` agent on your machine. These can run on multiple machines and will sweep continuously, starting new `wandb` runs in succession. 
-The second option starts a `wandb` agent that will only start a single `wandb` run. This can also be run on multiple machines and each will terminate after the 
-run is complete. The last option queues this script on a remote machine using the SLURM job-queuing system. You will need to adjust the SLURM script to suit your needs. 
+```bash
+python scripts/validate_setup.py --data-dir data/processed
+```
 
+If the official corpus uses different file extensions, pass its actual file
+paths to `--train` and `--validation`; the script does not depend on the
+extension.
+
+## 3. Fast local smoke test
+
+Use the included fixture text and prepare a small vocabulary:
+
+```bash
+python scripts/prepare_data.py \
+  --train tests/fixtures/train.txt \
+  --validation tests/fixtures/validation.txt \
+  --output-dir data/smoke-processed \
+  --vocab-size 256
+python scripts/run_from_config.py configs/smoke.yaml
+```
+
+This initializes the real architecture, trains five optimizer steps, saves a
+checkpoint, evaluates it, and exports a reloadable Hugging Face model. It is a
+pipeline test, not a meaningful language model.
+
+## 4. Train one full model
+
+```bash
+python scripts/run_from_config.py configs/train_model_b.yaml
+```
+
+Or call the canonical trainer directly:
+
+```bash
+python scripts/train.py \
+  --data-dir data/processed \
+  --output-dir outputs/model-b \
+  --epochs 10 \
+  --learning-rate 1e-4 \
+  --weight-decay 0.01 \
+  --warmup-ratio 0.05 \
+  --lr-scheduler cosine \
+  --batch-size 8 \
+  --gradient-accumulation 4 \
+  --resume-from-checkpoint auto
+```
+
+`--resume-from-checkpoint auto` finds the newest valid Trainer checkpoint.
+Training refuses to exceed the 100-million-word Strict budget. Model-only
+exports are saved at 1–10M words and then every 10M words through 90M.
+
+## 5. Run the ten-configuration sweep
+
+```bash
+python scripts/run_sweep.py \
+  --data-dir data/processed \
+  --output-dir outputs/sweep \
+  --epochs 10
+```
+
+Each run is restart-safe. Completed trials are skipped and incomplete trials
+resume from their newest checkpoint. The configurations vary learning rate,
+scheduler, weight decay, and warmup. `sweep_summary.json` ranks completed runs
+by validation loss.
+
+For a cheap pipeline check, run the same ten configurations for five steps:
+
+```bash
+python scripts/run_sweep.py \
+  --data-dir data/smoke-processed \
+  --output-dir outputs/sweep-smoke \
+  --epochs 1 --max-steps 5
+```
+
+Select and optionally export the winner:
+
+```bash
+python scripts/select_best_model.py --sweep-dir outputs/sweep
+python scripts/select_best_model.py \
+  --sweep-dir outputs/sweep \
+  --export-dir models/model-b-best
+```
+
+## 6. Run official BabyLM evaluation
+
+Set up the pinned official BabyLM evaluator, then download its evaluation data
+according to its README:
+
+```bash
+bash evaluation/setup_evaluator.sh
+cd external/babylm-eval/strict
+pip install -r requirements.txt
+python scripts/download_evals.py
+cd ../../..
+```
+
+Then run the compatibility preflight and full evaluation:
+
+```bash
+bash evaluation/run_full_eval.sh \
+  models/model-b-best \
+  external/babylm-eval/strict
+```
+
+The runner performs zero-shot evaluation, reading-time evaluation,
+GlobalPIQA, and all seven fine-tuning tasks. It writes `EVALUATION_COMPLETE`
+only after every required fine-tuning result and prediction file exists.
+
+The reported official scores use the upstream evaluator. Our separate
+surprisal diagnostic identified a missing-leading-space issue for byte-level
+tokenizers; diagnostic corrections must not be presented as official scores.
+
+Create a compact CSV after evaluation:
+
+```bash
+python scripts/summarize_results.py \
+  --result-root external/babylm-eval/strict/results/model-b-best/main \
+  --output results/generated/model-b-evaluation.csv
+```
+
+## 7. Optional Docker and Kubernetes execution
+
+Docker uses the same commands as local execution:
+
+```bash
+docker build -t babylm-hf-trainer .
+docker run --gpus all --rm \
+  -v "$PWD/data:/app/data" \
+  -v "$PWD/outputs:/app/outputs" \
+  babylm-hf-trainer \
+  python scripts/run_from_config.py configs/smoke.yaml
+```
+
+Generic Kubernetes templates are under `kubernetes/`. They intentionally
+contain placeholders instead of the original namespace, PVC, registry, or
+credentials. TAs do not need our Kubernetes account: they can run locally or
+substitute resources from their own cluster.
+
+Never commit kubeconfig files, API tokens, service-account tokens, `.env`
+files, or Kubernetes Secrets.
+
+## 8. Tests
+
+```bash
+pytest
+```
+
+See [docs/reproduction.md](docs/reproduction.md) for the experiment tiers and
+[docs/results.md](docs/results.md) for the recorded results.

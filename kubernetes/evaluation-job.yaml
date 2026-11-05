@@ -1,0 +1,29 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: babylm-hf-evaluation
+  namespace: YOUR_NAMESPACE
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: evaluation
+          image: YOUR_REGISTRY/babylm-hf-trainer:latest
+          command:
+            - bash
+            - evaluation/run_full_eval.sh
+            - /app/outputs/model-b-best
+            - /app/external/babylm-eval/strict
+          resources:
+            requests: {cpu: "4", memory: 20Gi, nvidia.com/gpu: "1"}
+            limits: {cpu: "4", memory: 20Gi, nvidia.com/gpu: "1"}
+          volumeMounts:
+            - {name: outputs, mountPath: /app/outputs}
+            - {name: evaluator, mountPath: /app/external/babylm-eval}
+      volumes:
+        - name: outputs
+          persistentVolumeClaim: {claimName: YOUR_OUTPUT_PVC}
+        - name: evaluator
+          persistentVolumeClaim: {claimName: YOUR_EVALUATOR_PVC}

@@ -1,5 +1,0 @@
-model_dir: outputs/sweep/run01-lr1e-4-cos-wd01-wu05/final
-evaluator_dir: ../babylm-eval-2026/strict
-data_dir: ../babylm-eval-2026/strict/evaluation_data/full_eval
-backend: causal
-mode: full
