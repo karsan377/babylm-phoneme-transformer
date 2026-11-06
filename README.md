@@ -4,6 +4,8 @@ Forked from [codebyzeb/PhonemeTransformers](https://github.com/codebyzeb/Phoneme
 
 Our mentor, Alex Warstadt, provisioned the Nautilus cluster for the group. All training and evaluation here ran on it.
 
+Link to this repo: https://github.com/karsan377/babylm-phoneme-transformer
+
 ## Team branches
 
 Each member has their group/independent work on their own branch. 
