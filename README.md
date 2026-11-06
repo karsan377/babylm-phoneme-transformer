@@ -1,7 +1,7 @@
 # BabyLM Hugging Face Trainer pipeline
 
-This directory reproduces Samson Wanfranek's BabyLM Strict text-model
-experiment without requiring access to the original Kubernetes account. It
+This repository reproduces our BabyLM Strict text-model experiment without
+requiring access to the original Kubernetes account. It
 contains data preparation, tokenizer training, a randomly initialized
 Llama-style causal model, Hugging Face Trainer training, checkpoint resume,
 word-milestone exports, a ten-configuration sweep, model selection, and the
@@ -10,6 +10,20 @@ official BabyLM evaluation entry point.
 The model is **not GPT-2 and not a pretrained Llama checkpoint**. It is a
 35,662,336-parameter Llama-style decoder initialized from random weights and
 trained with `transformers.Trainer`.
+
+## Human and AI contribution statement
+
+We defined the project goal, selected the BabyLM Strict task, made the main
+experimental decisions, ran and monitored the Kubernetes experiments,
+reviewed the results, and decided which model and hyperparameters to report.
+An OpenAI coding assistant was used to help organize the repository,
+write and debug parts of the preprocessing, training, sweep, checkpointing,
+evaluation, testing, Kubernetes, and documentation code, and investigate
+pipeline failures. The generated work was reviewed through code inspection,
+unit tests, a real Hugging Face Trainer preflight, a five-step end-to-end smoke
+run, Kubernetes logs and events, output-file checks, and comparison with the
+recorded experiment results. See [AI_USE.md](AI_USE.md) for the prompt record
+and more detailed testing information.
 
 ## Model and experiment
 
@@ -36,7 +50,7 @@ Python 3.11 and a CUDA-capable GPU are recommended. CPU execution works for
 the smoke test but full training and evaluation are expensive.
 
 ```bash
-cd huggingface_trainer
+# Run from the repository root.
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
@@ -225,4 +239,5 @@ pytest
 ```
 
 See [docs/reproduction.md](docs/reproduction.md) for the experiment tiers and
-[docs/results.md](docs/results.md) for the recorded results.
+[docs/results.md](docs/results.md) for the recorded results. The use of AI in
+the coding process is documented in [AI_USE.md](AI_USE.md).
