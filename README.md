@@ -80,3 +80,7 @@ These use the 2024 phonemized data, so they aren't comparable to the official 20
 
 - The sweep, dropout and size-comparison configs from the original repo are still here. We haven't rerun them on this fork.
 - The original `scripts/sweep.yaml` and SLURM workflows aren't set up here.
+
+## AI Acknowledge
+
+AI, specifically Claude Haiku 5.5, was used throughout this project for writing yaml configs, Nautilus job manifests, debugging (from software incompatability to cluster failures issues), and project direction. 
