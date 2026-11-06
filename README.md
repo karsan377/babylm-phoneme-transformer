@@ -67,9 +67,11 @@ Both write `blimp_results.json` into the checkpoint folder, so run them one at a
 
 The code to run this is in the babylm-eval-2026 folder, sourced from the [2026 babylm-eval repo](https://github.com/babylm-org/babylm-eval/tree/main/strict). To run this, install the following:
 
-`pip install -r requirements.txt
+```
+pip install -r requirements.txt
 pip install --upgrade --force-reinstall torch
-apt-get install espeak-ng`
+apt-get install espeak-ng
+```
 
 In the strict folder, run:
 
