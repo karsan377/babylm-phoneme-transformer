@@ -1,6 +1,6 @@
 # AI Use
 
-Summarized prompts I used:
+Summarized prompts used:
 
 
 ## Repository setup
