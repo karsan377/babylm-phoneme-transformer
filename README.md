@@ -4,6 +4,16 @@ Forked from [codebyzeb/PhonemeTransformers](https://github.com/codebyzeb/Phoneme
 
 Our mentor, Alex Warstadt, provisioned the Nautilus cluster for the group. All training and evaluation here ran on it.
 
+## Team branches
+
+Each member has their group/independent work on their own branch. 
+
+- `feature/evaluation-pipeline-submodule` (Karthik Sankaran): the phoneme transformer, Nautilus jobs and the 2024 BLiMP/EWoK evaluation. This is the main branch of work described here.
+- `jl-eval-files` (Jason Liu): the 2026 evaluation setup under `babylm-eval-2026/strict/`.
+- `babylm-huggingFaceTrainer-samson` (Samson Wan): the Hugging Face trainer work.
+- `hugging-face-gpt2-esther` (Esther Chung): the GPT-2 model work on Hugging Face.
+- `pico-train` (Michelle Hong): the pico-train model.
+
 ## Setup
 
 Reproduction used commit `302a9d3`.
