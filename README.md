@@ -63,18 +63,40 @@ There are two evaluation setups.
 
 Both write `blimp_results.json` into the checkpoint folder, so run them one at a time. The second overwrites the first. Per-task tables are in the job logs.
 
-**2026 data (in progress).** Jason's branch adds `babylm-eval-2026/strict/`, with `phoneme_tokenizer.py` and `scripts/eval_full_phoneme.sh`. The tokenizer wrapper phonemizes English text with espeak and maps it to the IPA-BabyLM phone inventory. The script runs BLiMP, the supplement, COMPS and reading. This isn't merged into our branch, and we haven't run it.
+**2026 data** For this setup, the tokenizer wrapper phonemizes English text with espeak and maps it to the IPA-BabyLM phone inventory. The script runs BLiMP, the supplement, COMPS and reading. 
+
+The code to run this is in the babylm-eval-2026 folder, sourced from the [2026 babylm-eval repo](https://github.com/babylm-org/babylm-eval/tree/main/strict). To run this, install the following:
+
+`pip install -r requirements.txt
+pip install --upgrade --force-reinstall torch
+apt-get install espeak-ng`
+
+In the strict folder, run:
+
+`python -m scripts.download_evals`
+
+And to run the evaluation, run:
+
+`bash scripts/eval_full_phoneme.sh ../checkpoints/checkpoint-100000 causal 2>&1 | tee eval_logs.log`
+
+Use a path to the specific checkpoint to run the evaluation for. The results will be printed both to terminal output and to a specified log file.
 
 ## Results
 
 Chance is 50%. Full summary is in `results/RESULTS.md`.
+
+2024 phonemized data: 
 
 | Checkpoint | BLiMP (filtered) | BLiMP (supplement) | EWoK |
 |---|---|---|---|
 | 150k | 65.2% | 57.2% | 49.4% |
 | 200k | 64.8% | 57.1% | 49.6% |
 
-These use the 2024 phonemized data, so they aren't comparable to the official 2026 scores.
+2026 phonemized data:
+
+| Checkpoint | BLiMP (filtered) | BLiMP (supplement) | EWoK | COMPS | Reading
+|---|---|---|---|---|---|
+| 100k | 64.26% | 55.44% | 51.64% | 51.40% | 0.985 |
 
 ## Notes
 
