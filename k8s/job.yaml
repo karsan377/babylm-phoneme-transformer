@@ -26,9 +26,9 @@ spec:
             - secretRef:
                 name: keys
           env:
-            - { name: HF_USER, value: seashello }
-            - { name: WANDB_ENTITY, value: models-uc-san-diego7270 }
-            - { name: WANDB_PROJECT, value: babylm-sweep }
+            - { name: HF_USER, value: seashello } # currently hardcoded to my info
+            - { name: WANDB_ENTITY, value: models-uc-san-diego7270 } # currently hardcoded to my info
+            - { name: WANDB_PROJECT, value: babylm-sweep } # currently hardcoded to my info
             - { name: MB, value: "8" }
             - { name: N_LAYERS, value: "4" }
             - { name: PRECISION, value: "16-mixed" }
