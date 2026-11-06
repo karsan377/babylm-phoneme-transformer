@@ -63,7 +63,7 @@ There are two evaluation setups.
 
 Both write `blimp_results.json` into the checkpoint folder, so run them one at a time. The second overwrites the first. Per-task tables are in the job logs.
 
-**2026 data** For this setup, the tokenizer wrapper phonemizes English text with espeak and maps it to the IPA-BabyLM phone inventory. The script runs BLiMP, the supplement, COMPS and reading. 
+**2026 data:** For this setup, the tokenizer wrapper phonemizes English text with espeak and maps it to the IPA-BabyLM phone inventory. The script runs BLiMP, the supplement, COMPS and reading. 
 
 The code to run this is in the babylm-eval-2026 folder, sourced from the [2026 babylm-eval repo](https://github.com/babylm-org/babylm-eval/tree/main/strict). To run this, install the following:
 
