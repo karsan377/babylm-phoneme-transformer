@@ -34,6 +34,13 @@ Summarized prompts I used:
 - used Claude to write Kube job specs for the cluster and intermittently monitor them. It ran smoke tests and then the full hyperparameter sweep on my behalf
 - used it to check job status, clean up stale jobs, export W&B results, and plot results
 
+## 2026 Evaluation Script
+- Jason: First used Claude to help understand the existing project architecture and existing work to train a model to be used for evaluation.
+- Claude was used to help identify version mismatches and needed dependencies for running the 2026 evaluation script. Communication was primarily in the form of error logs and asking claude to help identify the potential problem.
+- To understand the compatibility issues between our phoneme model and the 2026 evaluation code, Claude was used to generate basic scripts to help identify the exact problems. The code is seen in files "check_phonemizer.py" and "verify_wrapper.py".
+- After identifying the problem was with mismatches between the outputs of the tokenizers between training and evaluation, Claude was asked to "create a working tokenizer wrapper that would help fix the problems". The result is seen in "phoneme_tokenizer.py".
+- The evaluation script still ran into some issues, specifically with installing some of the evaluation data files and issues with torch installation version conflicts. Error messages were sent to Claude to help determine the ideal course of action for solving the problems.
+- After the evaluation ran successfully, Claude and ChatGPT were consulted briefly to help make sense of some of the scores that were returned.
 
 ## Other questions
 
