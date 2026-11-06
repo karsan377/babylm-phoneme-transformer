@@ -8,11 +8,11 @@ Our mentor, Alex Warstadt, provisioned the Nautilus cluster for the group. All t
 
 Each member has their group/independent work on their own branch. 
 
-- `feature/evaluation-pipeline-submodule` (Karthik Sankaran and Jason Liu): the phoneme transformer and 2024 BLiMP/EWoK evaluation
-- `jl-eval-files` (Jason Liu): the 2026 evaluation setup for thhe phoneme transformer under `babylm-eval-2026/strict/`
+- `feature/evaluation-pipeline-submodule` (Karthik Sankaran and Jason Liu): the phoneme transformer, 2024 BLiMP/EWoK evaluation scripts, and 2026 evaluation setup
+- `jl-eval-files` (Jason Liu): the 2026 evaluation setup for the phoneme transformer under `babylm-eval-2026/strict/`. Merged into Main.
 - `babylm-huggingFaceTrainer-samson` (Samson Wan): the Hugging Face trainer task
 - `hugging-face-gpt2-esther` (Esther Chung): the GPT-2 model work on Hugging Face task
-- `pico-train` (Michelle Hong): Michelle's independent work towards pico-train model task we were all assigned
+- `pico-train` (Michelle Hong): Michelle's independent work towards the pico-train model task we were all assigned
 
 ## Setup
 
