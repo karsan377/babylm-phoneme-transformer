@@ -1,45 +1,82 @@
 # Phoneme Transformers
 
-This repository contains training scripts, configs and analysis notebooks related to training and evaluating transformers trained on phonemes. This project is still in development.
+Forked from [codebyzeb/PhonemeTransformers](https://github.com/codebyzeb/PhonemeTransformers), which contains the original training code and configs for transformers trained on phonemes. This fork adds Nautilus job files, pinned dependencies, and evaluation setups for BLiMP and EWoK.
 
-## Installation
+Our mentor, Alex Warstadt, provisioned the Nautilus cluster for the group. All training and evaluation here ran on it.
 
-If you plan to use Weights and Biases for logging (i.e. not running in offline mode) you will also need to specify your wandb project to `.env` with the name `WANDB_ENTITY`. In order to interact with the hub, you need to generate read and write [access tokens](https://huggingface.co/docs/hub/security-tokens) from your hugging face account. Once generated, store these values as environment variables in `.env` with the names `HF_READ_TOKEN`, and `HF_WRITE_TOKEN`:
+## Setup
 
+Reproduction used commit `302a9d3`.
+
+```bash
+git clone --recurse-submodules https://github.com/karsan377/babylm-phoneme-transformer.git
+cd babylm-phoneme-transformer
+git checkout 302a9d3
+git submodule update --init --recursive
+pip install -r requirements.txt
+pip install ./submodules/evaluation-pipeline-2024
+pip install "wandb==0.18.7"
 ```
-export WANDB_ENTITY=""
-export HF_READ_TOKEN=""
-export HF_WRITE_TOKEN=""
+
+Create a `.env` file in the repo root and source it before running anything:
+
+```bash
+export WANDB_ENTITY="your-wandb-entity"
+export HF_READ_TOKEN="your-hf-token"
+export HF_WRITE_TOKEN="your-hf-token"
 ```
 
-Then, to set up the project, run `./setup.sh`. This sets up the requirements and git hooks for automatic code formatting. Additionally, this script makes sure you are logged into WandB and Huggingface.
+Data and the tokenizer download from Hugging Face on first use:
+- Tokenizer: `phonemetransformers/GPT2-85M-CHAR-PHON-SPACELESS`
+- Training data: `phonemetransformers/IPA-BabyLM` (subset `strict_small`)
+- Evaluation data: `phonemetransformers/IPA-BabyLM-evaluation`
+
+## Weights & Biases
+
+Training logs to W&B when `experiment.offline_run=False`. Each W&B project is the experiment group, so this project is `phoneme-strict-small`. Run `wandb login` once with your API key, and set `WANDB_ENTITY` to your team or username. Use `experiment.offline_run=True` to turn logging off.
+
+Evaluation jobs don't log to W&B. Their scores are written to the checkpoint folder and the job logs.
 
 ## Training
 
-The main entry point for training is `train.py`, which uses a modified Huggingface Trainer to train a model. We use Hydra to specify configurations, including model parameters, with an architecture and dataset specified by the chosen configuration. E.g:
+Training needs a GPU. The reported run used one Tesla V100 (16 GB) and took about 13 hours.
 
-```
-python train.py experiment=base_experiment experiment.name=my-experiment experiment.group=debug
-```
-
-### Evaluation
-
-The project supports the [BabyLM evaluation pipeline](https://github.com/babylm/evaluation-pipeline-2024) by specifying the tasks to run during training. This requires downloading and placing the evaluation data in the main directory under `./evaluation_data/babylm_eval`. The project also supports the [BabySLM](https://github.com/babylm/evaluation-pipeline-2024) evaluation pipeline and custom word segmentation experiments. 
-
-### Hyperparameter Tuning
-
-Hyperparameter tuning can be conducted using a Weights & Biases sweep. To create a sweep, run the following:
-
-```
-wandb sweep --project PROJECT_NAME scripts/sweep.yaml
+```bash
+python train.py \
+  experiment=babylm_comparison_phoneme \
+  dataset=babylm_strict_small_phoneme dataset.subconfig=strict_small \
+  tokenizer=babylm_phoneme model=gpt2_85M \
+  experiment.name=phoneme-strict-small-gpt2-85M experiment.group=phoneme-strict-small \
+  experiment.offline_run=False experiment.push_to_hub=False \
+  experiment.evaluate_babyslm=False experiment.blimp_tasks=null
 ```
 
-This will create a new sweep in Weights & Biases with an ID and a URL. You can either run the agent by either:
-1. Running an agent directly using wandb: `wandb agent USER_ID/PROJECT_NAME/SWEEP_ID`
-2. Run the script provided: `sh scripts/run_sweep_agent USER_ID/PROJECT_NAME/SWEEP_ID`
-3. Queue a SLURM job to run the agent on a different node: `sbatch scripts/slurm_submit_sweep_agent.wilkes3 USER_ID/PROJECT_NAME/SWEEP_ID`.
+Checkpoints are saved to `checkpoints/<group>/<name>/` every 50k steps. On Nautilus, `scripts/nautilus/phoneme-checkpoints-pvc.yaml` creates a volume for them, and `scripts/nautilus/phoneme-train-job.yaml` runs the same command in a pod.
 
-The first option starts a `wandb` agent on your machine. These can run on multiple machines and will sweep continuously, starting new `wandb` runs in succession. 
-The second option starts a `wandb` agent that will only start a single `wandb` run. This can also be run on multiple machines and each will terminate after the 
-run is complete. The last option queues this script on a remote machine using the SLURM job-queuing system. You will need to adjust the SLURM script to suit your needs. 
+## Evaluation
 
+There are two evaluation setups.
+
+**2024 data (what produced the results below).** BLiMP and EWoK are scored with the `evaluation-pipeline-2024` submodule on the phonemized 2024 data:
+- `scripts/nautilus/phoneme-blimp-eval-job.yaml`
+- `scripts/nautilus/phoneme-ewok-eval-job.yaml`
+
+Both write `blimp_results.json` into the checkpoint folder, so run them one at a time. The second overwrites the first. Per-task tables are in the job logs.
+
+**2026 data (in progress).** Jason's branch adds `babylm-eval-2026/strict/`, with `phoneme_tokenizer.py` and `scripts/eval_full_phoneme.sh`. The tokenizer wrapper phonemizes English text with espeak and maps it to the IPA-BabyLM phone inventory. The script runs BLiMP, the supplement, COMPS and reading. This isn't merged into our branch, and we haven't run it.
+
+## Results
+
+Chance is 50%. Full summary is in `results/RESULTS.md`.
+
+| Checkpoint | BLiMP (filtered) | BLiMP (supplement) | EWoK |
+|---|---|---|---|
+| 150k | 65.2% | 57.2% | 49.4% |
+| 200k | 64.8% | 57.1% | 49.6% |
+
+These use the 2024 phonemized data, so they aren't comparable to the official 2026 scores.
+
+## Notes
+
+- The sweep, dropout and size-comparison configs from the original repo are still here. We haven't rerun them on this fork.
+- The original `scripts/sweep.yaml` and SLURM workflows aren't set up here.
