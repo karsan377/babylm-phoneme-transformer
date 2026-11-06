@@ -142,3 +142,4 @@ wandb
 
 # Downloaded evaluation data
 evaluation_data/
+results/*.log
